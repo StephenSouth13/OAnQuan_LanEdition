@@ -7,6 +7,7 @@ import { applyCardEffect } from './logic/cardEffects';
 import CardModal from './components/CardModal';
 import Stone from './components/Stone';
 import Timer from './components/Timer';
+import Instructions from './components/Instructions';
 
 /* -------------------- Utils -------------------- */
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -23,6 +24,11 @@ const AVATARS = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Nice",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Sweet",
 ];
+
+// Safe avatar getter with fallback
+const getSafeAvatar = (avatar: string): string => {
+  return avatar && avatar.trim() ? avatar : AVATARS[0];
+};
 
 const getRandomCard = (): GameCard => {
   const all = [...GAME_CARDS.IMMEDIATE, ...GAME_CARDS.HOLD];
@@ -47,7 +53,7 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [userAvatar, setUserAvatar] = useState(AVATARS[0]);
   const [isJoined, setIsJoined] = useState(false);
-  const [oppInfo, setOppInfo] = useState({ name: 'Đang chờ...', avatar: '' });
+  const [oppInfo, setOppInfo] = useState({ name: 'Đang chờ...', avatar: AVATARS[0] });
 
   const [board, setBoard] = useState<number[]>([5, 5, 5, 5, 5, 1, 5, 5, 5, 5, 5, 1]);
   const [scores, setScores] = useState({ p1: 0, p2: 0 });
@@ -301,23 +307,27 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f3e5ab] p-3 sm:p-6 lg:p-8 flex flex-col items-center landscape:p-2 landscape:h-screen landscape:overflow-auto">
-      {/* Header with logo and players info */}
-      <div className="w-full max-w-6xl flex justify-between items-center mb-3 sm:mb-10 lg:mb-12 landscape:mb-2 flex-wrap gap-2 sm:gap-4 lg:gap-6">
-        {/* Logo */}
-        <img src="/logo_ueh.png" alt="UEH Logo" className="h-12 sm:h-16 lg:h-20 w-auto" />
+      {/* Header - IMPROVED Player Info */}
+      <div className="w-full max-w-6xl flex justify-between items-center mb-4 sm:mb-6 lg:mb-8 landscape:mb-2 flex-wrap gap-3 sm:gap-4 lg:gap-6 px-2">
+        {/* Logo - SUBTLE */}
+        <img src="/logo_ueh.png" alt="UEH" className="h-8 sm:h-10 lg:h-12 w-auto opacity-70 hover:opacity-100 transition-opacity" />
         
-        {/* P1 Info */}
-        <div className="flex items-center gap-2 lg:gap-3 bg-white p-2 sm:p-3 lg:p-4 pr-4 sm:pr-6 lg:pr-8 rounded-full shadow-lg border-2 lg:border-4 border-amber-500 min-w-fit landscape:scale-90 landscape:origin-left">
-          <img src={role === 'p1' ? userAvatar : oppInfo.avatar} className="w-10 h-10 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full" alt="p1" />
-          <div className="flex flex-col items-start">
-            <p className="font-black text-xs sm:text-base lg:text-lg">{role === 'p1' ? userName : oppInfo.name}</p>
-            <p className="text-xs lg:text-sm text-gray-600">P1: {scores.p1}đ</p>
+        {/* P1 Info Card - LEFT */}
+        <div className={`flex items-center gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 rounded-2xl sm:rounded-3xl lg:rounded-[40px] border-3 sm:border-4 lg:border-[5px] transition-all ${
+          isP1Turn && role === 'p1' ? 'bg-amber-100 border-amber-700 shadow-lg ring-2 ring-amber-500' : 'bg-white border-amber-600 shadow-md'
+        }`}>
+          <img src={getSafeAvatar(role === 'p1' ? userAvatar : oppInfo.avatar)} className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full border-2 lg:border-3 border-amber-600" alt="p1" />
+          <div className="flex flex-col items-start min-w-fit">
+            <p className="text-xs sm:text-sm lg:text-base font-black text-amber-900">{role === 'p1' ? userName : oppInfo.name}</p>
+            <p className="text-sm sm:text-base lg:text-lg font-black text-amber-700">{scores.p1}đ</p>
           </div>
         </div>
-        
-        {/* Turn Status & Timer */}
-        <div className="flex flex-col items-center gap-1 lg:gap-2 landscape:gap-0.5">
-          <div className={`px-4 sm:px-8 lg:px-10 py-2 sm:py-2.5 lg:py-3 rounded-full font-black text-white shadow-lg text-xs sm:text-base lg:text-lg landscape:scale-90 ${isP1Turn ? 'bg-amber-600' : 'bg-blue-600'}`}>
+
+        {/* Turn Indicator - CENTER */}
+        <div className="flex flex-col items-center gap-1 sm:gap-2 landscape:gap-0.5">
+          <div className={`px-4 sm:px-6 lg:px-8 py-1.5 sm:py-2 lg:py-2.5 rounded-full font-black text-white shadow-lg text-xs sm:text-sm lg:text-base transition-all ${
+            isP1Turn ? 'bg-amber-600 ring-2 ring-amber-400' : 'bg-blue-600'
+          }`}>
             {isP1Turn ? "⏱️ LƯỢT P1" : "⏱️ LƯỢT P2"}
           </div>
           {(isP1Turn ? role === 'p1' : role === 'p2') && (
@@ -330,53 +340,96 @@ export default function App() {
               }}
             />
           )}
-          <button 
-            onClick={() => { navigator.clipboard.writeText(myId); alert("Đã copy ID!"); }} 
-            className="text-[8px] sm:text-[10px] lg:text-xs font-bold text-amber-800 underline hover:text-amber-600 landscape:text-[7px]"
-          >
-            ID: {myId.slice(0,6)}...
-          </button>
         </div>
-        
-        {/* P2 Info */}
-        <div className="flex items-center gap-2 lg:gap-3 bg-white p-2 sm:p-3 lg:p-4 pl-4 sm:pl-6 lg:pl-8 rounded-full shadow-lg border-2 lg:border-4 border-blue-500 min-w-fit landscape:scale-90 landscape:origin-right">
-          <div className="flex flex-col items-end">
-            <p className="font-black text-xs sm:text-base lg:text-lg">{role === 'p2' ? userName : oppInfo.name}</p>
-            <p className="text-xs lg:text-sm text-gray-600">P2: {scores.p2}đ</p>
+
+        {/* P2 Info Card - RIGHT */}
+        <div className={`flex flex-row-reverse items-center gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 rounded-2xl sm:rounded-3xl lg:rounded-[40px] border-3 sm:border-4 lg:border-[5px] transition-all ${
+          !isP1Turn && role === 'p2' ? 'bg-blue-100 border-blue-700 shadow-lg ring-2 ring-blue-500' : 'bg-white border-blue-600 shadow-md'
+        }`}>
+          <img src={getSafeAvatar(role === 'p2' ? userAvatar : oppInfo.avatar)} className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full border-2 lg:border-3 border-blue-600" alt="p2" />
+          <div className="flex flex-col items-end min-w-fit">
+            <p className="text-xs sm:text-sm lg:text-base font-black text-blue-900">{role === 'p2' ? userName : oppInfo.name}</p>
+            <p className="text-sm sm:text-base lg:text-lg font-black text-blue-700">{scores.p2}đ</p>
           </div>
-          <img src={role === 'p2' ? userAvatar : oppInfo.avatar} className="w-10 h-10 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full" alt="p2" />
         </div>
+
+        {/* Copy ID Button */}
+        <button
+          onClick={() => { navigator.clipboard.writeText(myId); alert("Đã copy ID!"); }}
+          className="ml-auto text-[8px] sm:text-[10px] lg:text-xs font-bold text-amber-700 hover:text-amber-900 underline transition-colors landscape:text-[7px]"
+        >
+          ID: {myId.slice(0,6)}...
+        </button>
       </div>
 
-      {/* Game Board - LANDSCAPE OPTIMIZED */}
-      <div className="flex items-center gap-1 sm:gap-4 lg:gap-6 bg-amber-950 p-2 sm:p-10 lg:p-12 landscape:p-2 rounded-[30px] sm:rounded-[80px] lg:rounded-[100px] landscape:rounded-2xl shadow-2xl border-b-2 sm:border-b-[10px] lg:border-b-[12px] landscape:border-b-2 border-black/30 overflow-auto landscape:max-h-[70vh]">
-        <div className="w-12 h-24 sm:w-24 sm:h-52 lg:w-32 lg:h-64 landscape:w-16 landscape:h-32 bg-amber-50 rounded-full flex items-center justify-center text-xl sm:text-5xl lg:text-6xl landscape:text-2xl font-black border-4 lg:border-6 border-amber-800 shadow-inner flex-shrink-0">
-          <Stone count={board[11]} size="sm" />
-        </div>
+      {/* Game Board - CORRECT STANDARD LAYOUT */}
+      <div className="flex flex-col items-center justify-center gap-4 sm:gap-5 lg:gap-7 w-full max-w-6xl px-2 sm:px-4">
         
-        <div className="grid grid-cols-5 gap-1 sm:gap-4 lg:gap-6 landscape:gap-1.5 flex-shrink-0">
-          {[10, 9, 8, 7, 6].map(i => (
-            <div 
-              key={i} 
-              onClick={() => handleMove(i)} 
-              className={`w-12 h-12 sm:w-24 sm:h-24 lg:w-32 lg:h-32 landscape:w-14 landscape:h-14 rounded-lg sm:rounded-3xl lg:rounded-3xl landscape:rounded-2xl flex items-center justify-center text-lg sm:text-4xl lg:text-5xl landscape:text-xl font-black transition-all ${!isP1Turn && role==='p2' && !skipNextTurn ? 'bg-stone-100 scale-105 cursor-pointer hover:scale-110' : 'bg-stone-400 opacity-50 cursor-not-allowed'}`}
-            >
-              <Stone count={board[i]} size={board[i] > 10 ? 'sm' : 'md'} />
+        {/* P2's Board (Top) - indices [6-10 fields, 11 treasure] */}
+        <div className={`w-full flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3 p-3 sm:p-4 lg:p-6 rounded-2xl sm:rounded-3xl lg:rounded-[40px] transition-all ${
+          !isP1Turn && role === 'p2' ? 'bg-blue-50 ring-3 ring-blue-400 shadow-lg' : 'bg-white shadow-md'
+        }`}>
+          <p className="text-[10px] sm:text-xs lg:text-sm font-black text-blue-900 uppercase tracking-[0.1em]">👤 {role === 'p2' ? userName : oppInfo.name} (P2)</p>
+          <div className="flex items-stretch justify-center gap-2 sm:gap-2.5 lg:gap-3 w-full">
+            {/* P2 Treasure (left) */}
+            <div className="w-14 h-20 sm:w-16 sm:h-32 lg:w-20 lg:h-40 rounded-xl sm:rounded-2xl lg:rounded-3xl bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center border-3 sm:border-4 lg:border-[5px] border-blue-700 shadow-lg flex-shrink-0">
+              <Stone count={board[11]} size="md" />
             </div>
-          ))}
-          {[0, 1, 2, 3, 4].map(i => (
-            <div 
-              key={i} 
-              onClick={() => handleMove(i)} 
-              className={`w-12 h-12 sm:w-24 sm:h-24 lg:w-32 lg:h-32 landscape:w-14 landscape:h-14 rounded-lg sm:rounded-3xl lg:rounded-3xl landscape:rounded-2xl flex items-center justify-center text-lg sm:text-4xl lg:text-5xl landscape:text-xl font-black transition-all ${isP1Turn && role==='p1' && !skipNextTurn ? 'bg-amber-200 scale-105 cursor-pointer hover:scale-110' : 'bg-amber-500 opacity-50 cursor-not-allowed'}`}
-            >
-              <Stone count={board[i]} size={board[i] > 10 ? 'sm' : 'md'} />
+            
+            {/* P2 Playing Fields (right-to-left: 10,9,8,7,6) */}
+            <div className="grid grid-cols-5 gap-1 sm:gap-1.5 lg:gap-2 flex-grow justify-items-center">
+              {[10, 9, 8, 7, 6].map(i => (
+                <div
+                  key={i}
+                  onClick={() => handleMove(i)}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-20 lg:h-20 rounded-lg sm:rounded-xl lg:rounded-2xl flex items-center justify-center font-black transition-all border-2 sm:border-3 lg:border-4 ${
+                    !isP1Turn && role === 'p2' && !skipNextTurn
+                      ? 'bg-blue-200 border-blue-600 hover:bg-blue-100 hover:scale-110 shadow-lg hover:shadow-xl active:scale-95 cursor-pointer'
+                      : 'bg-blue-300 border-blue-500 opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <Stone count={board[i]} size="sm" />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
-        
-        <div className="w-12 h-24 sm:w-24 sm:h-52 lg:w-32 lg:h-64 landscape:w-16 landscape:h-32 bg-amber-50 rounded-full flex items-center justify-center text-xl sm:text-5xl lg:text-6xl landscape:text-2xl font-black border-4 lg:border-6 border-amber-800 shadow-inner flex-shrink-0">
-          <Stone count={board[5]} size="sm" />
+
+        {/* Divider - VS */}
+        <div className="w-full flex items-center gap-2 sm:gap-3 my-1 sm:my-2 lg:my-3">
+          <div className="flex-1 h-1 sm:h-1.5 lg:h-2 bg-gradient-to-r from-transparent via-gray-400 to-transparent rounded-full" />
+          <span className="text-[10px] sm:text-xs lg:text-sm font-black text-gray-600 px-2">⚔️</span>
+          <div className="flex-1 h-1 sm:h-1.5 lg:h-2 bg-gradient-to-r from-transparent via-gray-400 to-transparent rounded-full" />
+        </div>
+
+        {/* P1's Board (Bottom) - indices [0-4 fields, 5 treasure] */}
+        <div className={`w-full flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3 p-3 sm:p-4 lg:p-6 rounded-2xl sm:rounded-3xl lg:rounded-[40px] transition-all ${
+          isP1Turn && role === 'p1' ? 'bg-amber-50 ring-3 ring-amber-400 shadow-lg' : 'bg-white shadow-md'
+        }`}>
+          <p className="text-[10px] sm:text-xs lg:text-sm font-black text-amber-900 uppercase tracking-[0.1em]">👤 {role === 'p1' ? userName : oppInfo.name} (P1)</p>
+          <div className="flex items-stretch justify-center gap-2 sm:gap-2.5 lg:gap-3 w-full">
+            {/* P1 Playing Fields (left-to-right: 0,1,2,3,4) */}
+            <div className="grid grid-cols-5 gap-1 sm:gap-1.5 lg:gap-2 flex-grow justify-items-center">
+              {[0, 1, 2, 3, 4].map(i => (
+                <div
+                  key={i}
+                  onClick={() => handleMove(i)}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-20 lg:h-20 rounded-lg sm:rounded-xl lg:rounded-2xl flex items-center justify-center font-black transition-all border-2 sm:border-3 lg:border-4 ${
+                    isP1Turn && role === 'p1' && !skipNextTurn
+                      ? 'bg-amber-200 border-amber-600 hover:bg-amber-100 hover:scale-110 shadow-lg hover:shadow-xl active:scale-95 cursor-pointer'
+                      : 'bg-amber-300 border-amber-500 opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <Stone count={board[i]} size="sm" />
+                </div>
+              ))}
+            </div>
+            
+            {/* P1 Treasure (right) */}
+            <div className="w-14 h-20 sm:w-16 sm:h-32 lg:w-20 lg:h-40 rounded-xl sm:rounded-2xl lg:rounded-3xl bg-gradient-to-b from-amber-200 to-amber-300 flex items-center justify-center border-3 sm:border-4 lg:border-[5px] border-amber-700 shadow-lg flex-shrink-0">
+              <Stone count={board[5]} size="md" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -421,6 +474,9 @@ export default function App() {
           </button>
         </div>
       )}
+
+      {/* Instructions Button */}
+      <Instructions />
     </div>
   );
 }
